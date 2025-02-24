@@ -1,4 +1,6 @@
 import pandas as pd
+from sklearn.cluster import KMeans
+import numpy as np
 
 # Load the CSV file
 file_path = "bills_sample.csv"  # Update the path if needed
@@ -47,6 +49,11 @@ df["is_weekend"] = df["day_of_week"].isin(["Saturday", "Sunday"])
 seasonal_tipping = df.groupby("is_weekend")["tip_percentage"].mean().reset_index()
 seasonal_tipping["is_weekend"] = seasonal_tipping["is_weekend"].map({True: "Weekend", False: "Weekday"})
 
+# Machine Learning - Cluster waiters based on performance
+waiter_features = waiter_analysis[["total_revenue", "total_tips", "avg_order_duration", "bill_count"]].fillna(0)
+kmeans = KMeans(n_clusters=3, random_state=42)
+waiter_analysis["performance_cluster"] = kmeans.fit_predict(waiter_features)
+
 # Print results
 print("Waiter Performance Analysis:")
 print(waiter_analysis)
@@ -55,6 +62,9 @@ print(fastest_waiter)
 print("\nSlowest Waiter:")
 print(slowest_waiter)
 print("\nTip Category by Waiter:")
-print(df[["waiter_uuid", "tip_category"]].drop_duplicates())
+print(df[["waiter_uuid", "tip_category"].drop_duplicates()])
 print("\nSeasonal Tipping Trends:")
 print(seasonal_tipping)
+print("\nWaiter Clusters:")
+print(waiter_analysis[["waiter_uuid", "performance_cluster"]])
+
