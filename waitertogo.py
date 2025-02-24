@@ -1,6 +1,10 @@
 import pandas as pd
-from sklearn.cluster import KMeans
 import numpy as np
+from sklearn.cluster import KMeans
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+from sklearn.preprocessing import MinMaxScaler
 
 # Load the CSV file
 file_path = "bills_sample.csv"  # Update the path if needed
@@ -54,6 +58,35 @@ waiter_features = waiter_analysis[["total_revenue", "total_tips", "avg_order_dur
 kmeans = KMeans(n_clusters=3, random_state=42)
 waiter_analysis["performance_cluster"] = kmeans.fit_predict(waiter_features)
 
+# LSTM Model for Tip Prediction
+scaler = MinMaxScaler()
+tip_data = df[["business_date", "tip_percentage"]].sort_values("business_date").set_index("business_date")
+tip_data_scaled = scaler.fit_transform(tip_data)
+
+# Prepare sequences for LSTM
+sequence_length = 10
+X, y = [], []
+for i in range(len(tip_data_scaled) - sequence_length):
+    X.append(tip_data_scaled[i:i+sequence_length])
+    y.append(tip_data_scaled[i+sequence_length])
+X, y = np.array(X), np.array(y)
+
+# Build LSTM Model
+model = Sequential([
+    LSTM(50, return_sequences=True, input_shape=(sequence_length, 1)),
+    LSTM(50, return_sequences=False),
+    Dense(25, activation='relu'),
+    Dense(1)
+])
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+# Train the model
+model.fit(X, y, epochs=10, batch_size=16)
+
+# Predict future tip trends
+future_predictions = model.predict(X[-5:])
+future_predictions = scaler.inverse_transform(future_predictions)
+
 # Print results
 print("Waiter Performance Analysis:")
 print(waiter_analysis)
@@ -67,4 +100,7 @@ print("\nSeasonal Tipping Trends:")
 print(seasonal_tipping)
 print("\nWaiter Clusters:")
 print(waiter_analysis[["waiter_uuid", "performance_cluster"]])
+print("\nFuture Tip Predictions:")
+print(future_predictions)
+
 
