@@ -9,7 +9,7 @@ from tensorflow.keras.layers import LSTM, Dense
 from sklearn.preprocessing import MinMaxScaler
 
 app = Flask(__name__)
-CORS(app)  # Allow frontend access
+CORS(app)  
 
 
 file_path = "bills_sample.csv"  
